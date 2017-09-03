@@ -27,8 +27,23 @@ PShape calculateMonsterShape() {
     return monsterShape;    
 }
 
+void drawMonster() {
+    PShape monsterShape = calculateMonsterShape();
+    shape(monsterShape, 0, 0);      
+}
+
+int tilesToPixels(int x) {
+  return oneTile * x;
+}
+
+void drawFloorTile() {
+  PShape ftShape = createShape(RECT, 0, 0, oneTile, oneTile);
+  ftShape.setFill(color(60, 60, 60));
+  shape(ftShape,0,0);
+}
+
 void draw() {  
     background(204);
-    PShape monsterShape = calculateMonsterShape();
-    shape(monsterShape, 0, 0);    
+    drawFloorTile();
+    drawMonster();
 }
