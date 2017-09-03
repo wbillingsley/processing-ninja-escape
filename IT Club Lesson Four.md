@@ -1,16 +1,26 @@
-# IT Club Lesson Four
+class: center, middle
 
+# IT Club Lesson Four
 
 *written hurriedly by Will*
 
-## Activity 2.1 Monster Maze, part one
+---
 
-When programs get large, we need to break them up into chunks. That's not for the computer's benefit -- it could cope with a huge long list of code -- it's for our benefit so we can remember where to look for parts of the code as we edit them.
+class: center, middle
+
+## Monster maze, part One
+
+---
+
+## Monster Maze, part one
 
 We're going to start writing a little game where we have to navigate a maze while avoiding the monsters.
 
 And the monsters are going to be pulsating blobs.
 
+Along the way we're going to learn a few more coding concepts
+
+---
 
 ### Setup 
 
@@ -21,7 +31,59 @@ Let's start by setting up the size of the window we want to display
       orientation(LANDSCAPE);
     }
 
+And leave `draw` empty
 
-To animate our maze, we're going to need to work out what it looks like at every tick -- where the monsters are, where we are. This is going to get a bit big, so we're going to create **classes** and **objects** to hold different parts.
+    void draw() {
+    
+    }
 
-A **class** describes what an object should be like -- dogs have a name, for instance. And then we can tell the computer we would like 
+---
+
+### What, running already?
+
+Click run, and check you get a big empty box.
+
+Programmers try out their code **often**. The less you've changed since you ran it last, the less you have to search through to find what's broken if it didn't work!
+
+---
+
+### Some numbers
+
+Our game is going to be played on a grid of tiles, so the next thing we're going to do is write down a few **constants** -- so we don't forget how big a grid square is.
+
+Right at the top of the file:
+
+    static int oneTile = 64;
+    static int halfTile = oneTile / 2;
+    static int quarterTile = oneTile / 4;
+    static int eighthTile = oneTile / 8;
+
+Now we can't get the numbers wrong
+
+---
+
+### The pulsating blob...
+
+Our Monsters are going to be blobs that pulsate in a disturbing manner...
+
+Let's start by drawing an ellipse.
+
+    void draw() {  
+        PShape monsterShape = createShape(ELLIPSE, 
+          halfTile, halfTile,       // centre in the middle of the square
+          quarterTile + eighthTile, // fat...
+          quarterTile - eighthTile  // squat...
+        );
+        monsterShape.setFill(color(200, 50, 50));
+        shape(monsterShape, 0, 0);    
+    }
+
+(And run again)
+
+---
+
+### 
+
+
+
+
