@@ -5,6 +5,22 @@ int quarterTile = oneTile / 4;
 int eighthTile = oneTile / 8;
 
 PShape ftShape;
+PShape wtShape;
+
+int[][] gameMap = {
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1 },
+    { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1 },
+    { 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1 },
+    { 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
+};
 
 void setup() {
   size(1024, 768, P2D);
@@ -12,6 +28,9 @@ void setup() {
 
   ftShape = createShape(RECT, 0, 0, oneTile, oneTile);
   ftShape.setFill(color(60, 60, 60));
+  
+  wtShape = createShape(RECT, 0, 0, oneTile, oneTile);
+  wtShape.setFill(color(100, 100, 80));  
 }
 
 PShape calculateMonsterShape() {
@@ -43,12 +62,20 @@ void drawFloorTile(float x, float y) {
   shape(ftShape, tilesToPixels(x), tilesToPixels(y));
 }
 
+void drawWallTile(float x, float y) {
+  shape(wtShape, tilesToPixels(x), tilesToPixels(y));
+}
+
 void draw() {  
     background(204);
-    
     for (int y = 0; y < 12; y = y + 1) {
       for (int x = 0; x < 16; x = x + 1) {
-        drawFloorTile(x, y);
+        int tileValue = gameMap[y][x];
+        if (tileValue == 0) {
+          drawFloorTile(x, y);
+        } else if (tileValue == 1) {
+          drawWallTile(x, y);
+        }
       }
     }
     drawMonster();
