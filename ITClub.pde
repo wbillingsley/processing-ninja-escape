@@ -4,11 +4,14 @@ int halfTile = oneTile / 2;
 int quarterTile = oneTile / 4;
 int eighthTile = oneTile / 8;
 
+PShape ftShape;
 
 void setup() {
   size(1024, 768, P2D);
   orientation(LANDSCAPE);
 
+  ftShape = createShape(RECT, 0, 0, oneTile, oneTile);
+  ftShape.setFill(color(60, 60, 60));
 }
 
 PShape calculateMonsterShape() {
@@ -32,18 +35,21 @@ void drawMonster() {
     shape(monsterShape, 0, 0);      
 }
 
-int tilesToPixels(int x) {
+float tilesToPixels(float x) {
   return oneTile * x;
 }
 
-void drawFloorTile() {
-  PShape ftShape = createShape(RECT, 0, 0, oneTile, oneTile);
-  ftShape.setFill(color(60, 60, 60));
-  shape(ftShape,0,0);
+void drawFloorTile(float x, float y) {
+  shape(ftShape, tilesToPixels(x), tilesToPixels(y));
 }
 
 void draw() {  
     background(204);
-    drawFloorTile();
+    
+    for (int y = 0; y < 12; y = y + 1) {
+      for (int x = 0; x < 16; x = x + 1) {
+        drawFloorTile(x, y);
+      }
+    }
     drawMonster();
 }
