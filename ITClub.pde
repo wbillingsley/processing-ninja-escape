@@ -297,6 +297,7 @@ public class GameMap {
   
   static final int LAVA = 0;
   static final int FLOOR = 1;  
+  static final int GOAL = 2;  
   
   static final int NORTH = 1;
   static final int SOUTH = 2;
@@ -312,7 +313,7 @@ public class GameMap {
     for (int i = 0; i < numPaths; i++) {
       makePath();  
     }
-    gameMap[TilesHigh - 1][TilesWide - 1] = FLOOR;
+    gameMap[TilesHigh - 1][TilesWide - 1] = GOAL;
     gameMap[TilesHigh - 2][TilesWide - 1] = FLOOR;
     gameMap[TilesHigh - 1][TilesWide - 2] = FLOOR;
     gameMap[TilesHigh - 2][TilesWide - 2] = FLOOR;
@@ -381,7 +382,8 @@ public class GameMap {
         switch (tileValue) {
           case FLOOR: 
             drawFloorTile(x, y); break;
-          
+          case GOAL: 
+            drawGoalTile(x, y); break;          
         }
       }
     } 
@@ -392,6 +394,17 @@ public class GameMap {
     stroke(color(80,80,80));
     rect(tilesToPixels(x), tilesToPixels(y), oneTile, oneTile);
   }
+
+  void drawGoalTile(float x, float y) {
+    fill(color(20, 20, 80));
+    stroke(color(80,80,80));
+    rect(tilesToPixels(x), tilesToPixels(y), oneTile, oneTile);
+    
+    fill(color(80, 80, 80));
+    textSize(20);
+    text("GOAL", tilesToPixels(x) + eighthTile, tilesToPixels(y) + halfTile);
+  }
+
 }
 
 
