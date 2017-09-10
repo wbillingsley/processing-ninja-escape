@@ -4,35 +4,18 @@ int halfTile = oneTile / 2;
 int quarterTile = oneTile / 4;
 int eighthTile = oneTile / 8;
 
-PShape ftShape;
-PShape wtShape;
+GameMap gameMap = new GameMap(); 
 
-Lava lava = new Lava();
-
-int[][] gameMap = {
-    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-    { 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1 },
-    { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1 },
-    { 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
-};
+int numPaths = 4;
+int numMonsters = 2;
 
 void setup() {
   size(1024, 768, P2D);
   orientation(LANDSCAPE);
-
-  ftShape = createShape(RECT, 0, 0, oneTile, oneTile);
-  ftShape.setFill(color(60, 60, 60));
   
-  wtShape = createShape(RECT, 0, 0, oneTile, oneTile);
-  wtShape.setFill(color(100, 100, 80));  
+  for (int i = 0; i < numPaths; i++) {
+    gameMap.makePaths();  
+  }
 }
 
 PShape calculateMonsterShape() {
@@ -60,30 +43,105 @@ float tilesToPixels(float x) {
   return oneTile * x;
 }
 
-void drawFloorTile(float x, float y) {
-  shape(ftShape, tilesToPixels(x), tilesToPixels(y));
-}
-
-void drawWallTile(float x, float y) {
-  shape(wtShape, tilesToPixels(x), tilesToPixels(y));
-}
 
 void draw() {  
     //background(204);
-    lava.draw();
-    for (int y = 0; y < 12; y = y + 1) {
-      for (int x = 0; x < 16; x = x + 1) {
-        int tileValue = gameMap[y][x];
-        if (tileValue == 0) {
-          drawFloorTile(x, y);
-        } else if (tileValue == 1) {
-          //drawWallTile(x, y);
-        }
-      }
-    }
+    gameMap.draw();
     drawMonster();
 }
 
+
+public class Action {
+  
+}
+
+
+/**
+ * We've put the game map into its own "class". This is a way 
+ * of grouping variables and functions together.
+ */
+public class GameMap {
+  static final int TilesWide = 16;
+  static final int TilesHigh = 12;
+  
+  static final int NORTH = 0;
+  static final int SOUTH = 1;
+  static final int EAST = 2;
+  static final int WEST = 3;
+  
+  
+  int[][] gameMap = new int[TilesHigh][TilesWide];
+  
+  // Let's have a nice bubbling lava background
+  Lava lava = new Lava();
+  
+  // We're going to make the paths programmatically -- the map
+  // will be different every time!
+  public void makePaths() { 
+    int x = 0;
+    int y = 0;
+    
+    while (x < TilesWide - 1 || y < TilesHigh - 1) {
+      if (y < TilesHigh - 1 && random(2) > 1) {
+        int run = (int)random(TilesHigh - y);
+        for (int i = 0; i < run; i ++) {
+          gameMap[y + i][x] = 1;
+        }
+        y = y + run;
+      } else {
+        int run = (int)random(TilesWide - x);
+        for (int i = 0; i < run; i ++) {
+          gameMap[y][x + i] = 1;
+        }
+        x = x + run;        
+      }
+    }
+    
+    gameMap[y][x] = 1;
+  }
+  
+  public int targetX(int dir, int x, int y) {
+    switch(dir) {
+      case EAST: return x + 1;
+      case WEST: return x - 1;
+      default: return x; 
+    }
+  }
+
+  public int targetY(int dir, int x, int y) {
+    switch(dir) {
+      case NORTH: return y - 1;
+      case SOUTH: return y + 1;
+      default: return y; 
+    }
+  }
+
+  public boolean canMove(int dir, int x, int y) {
+    int tx = targetX(dir, x, y);
+    int ty = targetY(dir, x, y);
+    return (tx >= 0 && tx < TilesWide && ty >= 0 && ty < TilesHigh && gameMap[ty][tx] != 0); 
+  }
+
+  public void draw() {
+    lava.draw();
+    for (int y = 0; y < TilesHigh; y = y + 1) {
+      for (int x = 0; x < TilesWide; x = x + 1) {
+        int tileValue = gameMap[y][x];
+        switch (tileValue) {
+          case 1: 
+            drawFloorTile(x, y); break;
+          
+        }
+      }
+    } 
+  }
+  
+  void drawFloorTile(float x, float y) {
+    fill(color(20, 20, 20));
+    stroke(color(80,80,80));
+    rect(tilesToPixels(x), tilesToPixels(y), oneTile, oneTile);
+  }
+}
 
 
 /**
@@ -106,7 +164,7 @@ public class Lava {
   public void draw() {
     
     // First we fill the entire screen in a dark red
-    fill(75, 0, 0);
+    fill(90, 0, 0);
     rect(0, 0, width, height);    
     
     // Then we ask each bubble to draw itself
@@ -117,7 +175,7 @@ public class Lava {
   
   // A bubble of lava
   class LavaBlob {    
-    // where is it?
+    // Each lava blob needs to know where it is
     float x = 0;
     float y = 0;
     
@@ -148,9 +206,9 @@ public class Lava {
         r = r * (1 - now/20000.0); 
       }
   
-      
-      fill(100, 0, 0);
-      stroke(120, 0, 0);
+      // Draw the bubble
+      fill(120, 0, 0);
+      stroke(100, 0, 0);
       ellipse(x, y, r, r);
     }
   }
