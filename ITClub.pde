@@ -4,40 +4,30 @@ int halfTile = oneTile / 2;
 int quarterTile = oneTile / 4;
 int eighthTile = oneTile / 8;
 
-GameMap gameMap = new GameMap(); 
-
+boolean running = true;
 int numPaths = 4;
 int numMonsters = 2;
+GameMap gameMap = new GameMap(); 
+BlobMonster[] monsters = new BlobMonster[0]; 
+
+void setupMonsters() {
+  monsters = new BlobMonster[numMonsters];
+  for (int i = 0; i < numMonsters; i++) {
+    BlobMonster m = new BlobMonster();
+    m.findRandomTile();
+    monsters[i] = m;
+  }
+}
 
 void setup() {
   size(1024, 768, P2D);
   orientation(LANDSCAPE);
   
-  for (int i = 0; i < numPaths; i++) {
-    gameMap.makePaths();  
-  }
+  gameMap.makePaths();
+  setupMonsters();
 }
 
-PShape calculateMonsterShape() {
-    long time = millis();
-    float theta = time * 6.3 / 1000;
-    
-    float blobWidth = (quarterTile + eighthTile) + (eighthTile * sin(theta));
-    float blobHeight = (quarterTile + eighthTile) + (eighthTile * cos(theta));
-    
-    PShape monsterShape = createShape(ELLIPSE, 
-      halfTile, halfTile,       // centre in the middle of the tile
-      blobWidth,                // our calculated blob width
-      blobHeight                // our calculated blob height
-    );
-    monsterShape.setFill(color(200, 50, 50));
-    return monsterShape;    
-}
 
-void drawMonster() {
-    PShape monsterShape = calculateMonsterShape();
-    shape(monsterShape, 0, 0);      
-}
 
 float tilesToPixels(float x) {
   return oneTile * x;
@@ -47,14 +37,60 @@ float tilesToPixels(float x) {
 void draw() {  
     //background(204);
     gameMap.draw();
-    drawMonster();
+    for (BlobMonster m : monsters) { 
+      m.draw();
+    }
 }
 
 
-public class Action {
+public class Move {
+  static final int IDLE = 0;
+  
+  long start;
+  long direction;
+  
+  public Move(int dir) {
+    this.direction = dir;
+    this.start = millis();
+  }
   
 }
 
+
+public class BlobMonster {
+   
+  int x = 0;
+  int y = 0;
+  Move move = new Move(Move.IDLE);
+  
+  float blobWidth;
+  float blobHeight;
+  
+  void findRandomTile() {
+    int tx, ty;
+    do {
+      tx = (int)random(GameMap.TilesWide);
+      ty = (int)random(GameMap.TilesHigh);
+    } while (tx == 0 || ty == 0 || gameMap.gameMap[ty][tx] == 0);
+    x = tx;
+    y = ty;
+  }
+  
+  void draw() {
+    long time = millis();
+    float theta = time * 6.3 / 1000;
+    
+    if (running) {
+      blobWidth = (quarterTile + eighthTile) + (eighthTile * sin(theta));
+      blobHeight = (quarterTile + eighthTile) + (eighthTile * cos(theta));
+    }
+
+    fill(200, 50, 50);
+    stroke(200, 70, 70);
+    ellipse(tilesToPixels(x) + halfTile, tilesToPixels(y) + halfTile, blobWidth, blobHeight);
+  }
+  
+}
 
 /**
  * We've put the game map into its own "class". This is a way 
@@ -64,10 +100,13 @@ public class GameMap {
   static final int TilesWide = 16;
   static final int TilesHigh = 12;
   
-  static final int NORTH = 0;
-  static final int SOUTH = 1;
-  static final int EAST = 2;
-  static final int WEST = 3;
+  static final int LAVA = 0;
+  static final int FLOOR = 1;  
+  
+  static final int NORTH = 1;
+  static final int SOUTH = 2;
+  static final int EAST = 3;
+  static final int WEST = 4;
   
   
   int[][] gameMap = new int[TilesHigh][TilesWide];
@@ -75,21 +114,31 @@ public class GameMap {
   // Let's have a nice bubbling lava background
   Lava lava = new Lava();
   
+  public void makePaths() { 
+    for (int i = 0; i < numPaths; i++) {
+      makePath();  
+    }
+    gameMap[TilesHigh - 1][TilesWide - 1] = FLOOR;
+    gameMap[TilesHigh - 2][TilesWide - 1] = FLOOR;
+    gameMap[TilesHigh - 1][TilesWide - 2] = FLOOR;
+    gameMap[TilesHigh - 2][TilesWide - 2] = FLOOR;
+  }
+  
   // We're going to make the paths programmatically -- the map
   // will be different every time!
-  public void makePaths() { 
+  public void makePath() { 
     int x = 0;
     int y = 0;
     
-    while (x < TilesWide - 1 || y < TilesHigh - 1) {
+    while (x < TilesWide - 2 || y < TilesHigh - 2) {
       if (y < TilesHigh - 1 && random(2) > 1) {
-        int run = (int)random(TilesHigh - y);
+        int run = (int)(random(TilesHigh - y - 1)/2) * 2;
         for (int i = 0; i < run; i ++) {
           gameMap[y + i][x] = 1;
         }
         y = y + run;
       } else {
-        int run = (int)random(TilesWide - x);
+        int run = (int)(random(TilesWide - x - 1)/2) * 2;
         for (int i = 0; i < run; i ++) {
           gameMap[y][x + i] = 1;
         }
@@ -97,7 +146,6 @@ public class GameMap {
       }
     }
     
-    gameMap[y][x] = 1;
   }
   
   public int targetX(int dir, int x, int y) {
@@ -119,7 +167,7 @@ public class GameMap {
   public boolean canMove(int dir, int x, int y) {
     int tx = targetX(dir, x, y);
     int ty = targetY(dir, x, y);
-    return (tx >= 0 && tx < TilesWide && ty >= 0 && ty < TilesHigh && gameMap[ty][tx] != 0); 
+    return (tx >= 0 && tx < TilesWide && ty >= 0 && ty < TilesHigh && gameMap[ty][tx] != LAVA); 
   }
 
   public void draw() {
@@ -128,7 +176,7 @@ public class GameMap {
       for (int x = 0; x < TilesWide; x = x + 1) {
         int tileValue = gameMap[y][x];
         switch (tileValue) {
-          case 1: 
+          case FLOOR: 
             drawFloorTile(x, y); break;
           
         }
@@ -197,13 +245,15 @@ public class Lava {
     public void draw() {
       long now = millis() - start;
      
-      if (r < 1) { 
-        // If the radius is < 1, it's time to pop this bubble
-        reset(width, height); 
-      } else {
-        // Otherwise, shrink it slowly. This should cause it to seem
-        // like its shrinkage is accelerating slightly
-        r = r * (1 - now/20000.0); 
+      if (running) { 
+        if (r < 1) { 
+          // If the radius is < 1, it's time to pop this bubble
+          reset(width, height); 
+        } else {
+          // Otherwise, shrink it slowly. This should cause it to seem
+          // like its shrinkage is accelerating slightly
+          r = r * (1 - now/20000.0); 
+        }
       }
   
       // Draw the bubble
