@@ -5,44 +5,39 @@ int quarterTile = oneTile / 4;
 int eighthTile = oneTile / 8;
 
 boolean running = true;
+boolean spoilerPaths = true;
+boolean monstersActive = true;
+boolean manualControl = true;
+boolean showRoutes = true;
+boolean routesConsiderMonsters = true;
+
 int numPaths = 4;
 int numMonsters = 2;
+
 GameMap gameMap = new GameMap(); 
 BlobMonster[] monsters = new BlobMonster[0]; 
+
 Hero hero = new Hero();
-
-void setupMonsters() {
-  monsters = new BlobMonster[numMonsters];
-  for (int i = 0; i < numMonsters; i++) {
-    BlobMonster m = new BlobMonster();
-    m.findRandomTile();
-    monsters[i] = m;
-  }
-}
-
-void setup() {
-  size(1024, 768, P2D);
-  orientation(LANDSCAPE);
-  
-  gameMap.makePaths();
-  gameMap.spoilerPaths();
-  setupMonsters();
-}
 
 class Hero {
   
   int x = 0;
   int y = 0;
   Move move = new Move(Move.IDLE);
+  RouteFinder routeFinder = new RouteFinder();
   
   /** 
     * This is the function that controls the ninja's movements. Right now, you control them.
     * But you're going to write an AI script for it...
     */
-  void act() {
-    x += move.afterDx();
-    y += move.afterDy();    
+  void act(Move lastMove) {
     
+  }
+  
+  /*
+   *  Manual control...
+   */ 
+  void manualControl(Move lastMove) {
     if (keyPressed) {
       switch(key) {
         case 'w': moveNorth(); break;
@@ -53,7 +48,7 @@ class Hero {
       }      
     } else {
       move = new Move(Move.IDLE);
-    }
+    }    
   }
   
   void moveNorth() {
@@ -103,8 +98,22 @@ class Hero {
   
   void draw() {
     if (move.isComplete()) { 
-      act();
+      x += move.afterDx();
+      y += move.afterDy();
+      routeFinder.reset();
+      routeFinder.check(GameMap.TilesWide - 1, GameMap.TilesHigh - 1, 0); 
+      Move lastMove = move;
+      move = new Move(Move.IDLE);
+
+      if (running) {
+        if (manualControl) { 
+          manualControl(lastMove); 
+        } else act(lastMove);
+      }
     }
+    
+    // Draw the routeFinder's numbers
+    if (showRoutes) routeFinder.draw();
 
     // highlight active square
     fill(0, 0, 255, 50);
@@ -144,12 +153,30 @@ class Hero {
       tilesToPixels(y) + move.dy() + halfTile + 2, 
       2, 2
     );    
-    
-  }
-    
+   
+  }    
   
 }
 
+
+// Creates some monsters
+void setupMonsters() {
+  monsters = new BlobMonster[numMonsters];
+  for (int i = 0; i < numMonsters; i++) {
+    BlobMonster m = new BlobMonster();
+    m.findRandomTile();
+    monsters[i] = m;
+  }
+}
+
+void setup() {
+  size(1024, 768, P2D);
+  orientation(LANDSCAPE);
+  
+  gameMap.makePaths();
+  if (spoilerPaths) gameMap.spoilerPaths();
+  if (monstersActive) setupMonsters();
+}
 
 
 float tilesToPixels(float x) {
@@ -287,6 +314,61 @@ public class BlobMonster {
   
 }
 
+// Checks whether there are any monsters in the specified square
+boolean monstersAt(int x, int y) {
+  for (BlobMonster m : monsters) {
+    if (m.x == x && m.y == y) return true;
+  } 
+  return false;
+}
+
+public class RouteFinder {
+  int x = GameMap.TilesWide - 1;
+  int y = GameMap.TilesHigh - 1;
+  
+  int[][] goalDist = new int[GameMap.TilesHigh][GameMap.TilesWide];
+
+  public RouteFinder() {
+    reset();
+  }
+  
+  void reset() {
+    for (int y = 0; y < GameMap.TilesHigh; y++) {
+      for (int x = 0; x < GameMap.TilesWide; x++) {
+        goalDist[y][x] = MAX_INT;
+      }
+    }    
+  }
+  
+  void check(int x, int y, int dist) {
+    goalDist[y][x] = dist;
+    for (int move : new int[] { GameMap.NORTH, GameMap.SOUTH, GameMap.EAST, GameMap.WEST }) {
+      int tx = gameMap.targetX(move, x, y);
+      int ty = gameMap.targetY(move, x, y);
+      if(
+        gameMap.canMove(move, x, y) &&
+        goalDist[ty][tx] > dist + 1 && 
+        !(routesConsiderMonsters && monstersAt(tx, ty))
+      ) {
+        check(tx, ty, dist + 1);  
+      }          
+    }   
+  }
+  
+  void draw() {
+    for (int y = 0; y < GameMap.TilesHigh; y++) {
+      for (int x = 0; x < GameMap.TilesWide; x++) {
+        int d = goalDist[y][x];
+        if (d > 0 && d < MAX_INT) {
+          fill(color(80, 80, 80));
+          textSize(20);
+          text("" + d, tilesToPixels(x) + eighthTile, tilesToPixels(y) + halfTile);
+        }
+      }
+    }    
+  }
+}
+
 /**
  * We've put the game map into its own "class". This is a way 
  * of grouping variables and functions together.
@@ -305,7 +387,7 @@ public class GameMap {
   static final int WEST = 4;
   
   int[][] gameMap = new int[TilesHigh][TilesWide];
-  
+    
   // Let's have a nice bubbling lava background
   Lava lava = new Lava();
   
