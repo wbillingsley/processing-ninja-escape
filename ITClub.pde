@@ -71,6 +71,22 @@ class Hero {
   void moveWest() {
     move(GameMap.WEST);
   }
+  
+  boolean canMoveSouth() { 
+    return canMove(GameMap.SOUTH);  
+  }
+
+  boolean canMoveNorth() { 
+    return canMove(GameMap.NORTH);  
+  }
+
+  boolean canMoveEast() { 
+    return canMove(GameMap.EAST);  
+  }
+
+  boolean canMoveWest() { 
+    return canMove(GameMap.WEST);  
+  }
 
   
   void move(int dir) { 
