@@ -5,11 +5,11 @@ int quarterTile = oneTile / 4;
 int eighthTile = oneTile / 8;
 
 boolean running = true;
-boolean spoilerPaths = true;
+boolean spoilerPaths = false;
 boolean monstersActive = true;
 boolean manualControl = true;
-boolean showRoutes = true;
-boolean routesConsiderMonsters = true;
+boolean showRoutes = false;
+boolean routesConsiderMonsters = false;
 
 int numPaths = 4;
 int numMonsters = 2;
@@ -31,7 +31,7 @@ class Hero {
     * But you're going to write an AI script for it...
     */
   void act(Move lastMove) {
-    
+    // YOUR CODE GOES HERE!
   }
   
   /*
